@@ -4,7 +4,6 @@
   import { getHash } from "$lib/hash";
   import { getHue, getName } from "$lib/user";
   import Icon from "$lib/Icon.svelte";
-  import markdownSample  from "../markdown.txt?raw"
   import { editor as e } from "monaco-editor/esm/vs/editor/editor.api";
   import { Collab, type UserInfo } from "$lib/collab";
   let users: Record<number, UserInfo> = $state.raw({});
@@ -34,7 +33,6 @@
         onConnected: () => (connected = true),
         onDisconnected: () => (connected = false),
       });
-      model.setValue(markdownSample)
     }
 
     return () => {

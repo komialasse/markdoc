@@ -5,6 +5,7 @@ import type {
   editor,
 } from "monaco-editor/esm/vs/editor/editor.api";
 import { OpSeq } from "wasm";
+import markdownSample  from "../../markdown.txt?raw"
 
 export type Options = {
   readonly uri: string;
@@ -32,7 +33,8 @@ export class Collab {
   private readonly tryConnectId: number;
   private readonly resetFailuresId: number;
 
-  private me: number = 0;
+  private markdownSampleLoaded: boolean = false
+  private me: number = -1;
   private revision: number = 0;
   private outstandingOp?: OpSeq;
   private buffer?: OpSeq;
@@ -132,6 +134,10 @@ export class Collab {
   private handleMessage(msg: ServerMessage) {
     if (msg.Identity !== undefined) {
       this.me = msg.Identity;
+      if (!this.markdownSampleLoaded && this.me == 0) {
+        this.model.setValue(markdownSample)
+        this.markdownSampleLoaded = true
+      }
     } else if (msg.History !== undefined) {
       const { start, operations } = msg.History;
       if (start > this.revision) {
