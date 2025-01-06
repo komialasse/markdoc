@@ -46,6 +46,7 @@
         });
         monaco.editor.setTheme("collab-doc-theme");
         editor = monaco.editor.create(editorElement, {
+            value: content,
             language: "markdown",
             fontSize: 13,
             automaticLayout: true,

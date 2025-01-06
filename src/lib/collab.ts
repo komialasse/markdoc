@@ -6,25 +6,20 @@ import type {
 } from "monaco-editor/esm/vs/editor/editor.api";
 import { OpSeq } from "wasm";
 
-/** Options passed in to the Collab constructor. */
-export type CollabOptions = {
+export type Options = {
   readonly uri: string;
   readonly editor: editor.IStandaloneCodeEditor;
   readonly onConnected?: () => void;
   readonly onDisconnected?: () => void;
-  readonly onDesynchronized?: () => void;
-  readonly onChangeLanguage?: (language: string) => void;
   readonly onChangeUsers?: (users: Record<number, UserInfo>) => void;
   readonly reconnectInterval?: number;
 };
 
-/** A user currently editing the document. */
 export type UserInfo = {
   readonly name: string;
   readonly hue: number;
 };
 
-/** Browser client for Collab. */
 export class Collab {
   private ws?: WebSocket;
   private connecting?: boolean;
@@ -37,22 +32,20 @@ export class Collab {
   private readonly tryConnectId: number;
   private readonly resetFailuresId: number;
 
-  // Client-server state
-  private me: number = -1;
+  private me: number = 0;
   private revision: number = 0;
-  private outstanding?: OpSeq;
+  private outstandingOp?: OpSeq;
   private buffer?: OpSeq;
   private users: Record<number, UserInfo> = {};
   private userCursors: Record<number, CursorData> = {};
   private myInfo?: UserInfo;
   private cursorData: CursorData = { cursors: [], selections: [] };
 
-  // Intermittent local editor state
   private lastValue: string = "";
   private ignoreChanges: boolean = false;
   private oldDecorations: string[] = [];
 
-  constructor(readonly options: CollabOptions) {
+  constructor(readonly options: Options) {
     this.model = options.editor.getModel()!;
     this.onChangeHandle = options.editor.onDidChangeModelContent((e) =>
       this.onChange(e),
@@ -67,7 +60,7 @@ export class Collab {
       cursorUpdate();
     });
     this.beforeUnload = (event: BeforeUnloadEvent) => {
-      if (this.outstanding) {
+      if (this.outstandingOp) {
         event.preventDefault();
         event.returnValue = "";
       } else {
@@ -85,7 +78,6 @@ export class Collab {
     );
   }
 
-  /** Destroy this Collab instance and close any sockets. */
   dispose() {
     window.clearInterval(this.tryConnectId);
     window.clearInterval(this.resetFailuresId);
@@ -96,29 +88,13 @@ export class Collab {
     this.ws?.close();
   }
 
-  /** Try to set the language of the editor, if connected. */
-  setLanguage(language: string): boolean {
-    this.ws?.send(`{"SetLanguage":${JSON.stringify(language)}}`);
-    return this.ws !== undefined;
-  }
 
-  /** Set the user's information. */
   setInfo(info: UserInfo) {
     this.myInfo = info;
     this.sendInfo();
   }
 
-  /**
-   * Attempts a WebSocket connection.
-   *
-   * Safety Invariant: Until this WebSocket connection is closed, no other
-   * connections will be attempted because either `this.ws` or
-   * `this.connecting` will be set to a truthy value.
-   *
-   * Liveness Invariant: After this WebSocket connection closes, either through
-   * error or successful end, both `this.connecting` and `this.ws` will be set
-   * to falsy values.
-   */
+  // Attempts websocket connection.
   private tryConnect() {
     if (this.connecting || this.ws) return;
     this.connecting = true;
@@ -131,8 +107,8 @@ export class Collab {
       this.options.onChangeUsers?.(this.users);
       this.sendInfo();
       this.sendCursorData();
-      if (this.outstanding) {
-        this.sendOperation(this.outstanding);
+      if (this.outstandingOp) {
+        this.sendOperation(this.outstandingOp);
       }
     };
     ws.onclose = () => {
@@ -140,10 +116,7 @@ export class Collab {
         this.ws = undefined;
         this.options.onDisconnected?.();
         if (++this.recentFailures >= 5) {
-          // If we disconnect 5 times within 15 reconnection intervals, then the
-          // client is likely desynchronized and needs to refresh.
           this.dispose();
-          this.options.onDesynchronized?.();
         }
       } else {
         this.connecting = false;
@@ -156,13 +129,13 @@ export class Collab {
     };
   }
 
-  private handleMessage(msg: ServerMsg) {
+  private handleMessage(msg: ServerMessage) {
     if (msg.Identity !== undefined) {
       this.me = msg.Identity;
     } else if (msg.History !== undefined) {
       const { start, operations } = msg.History;
       if (start > this.revision) {
-        console.warn("History message has start greater than last operation.");
+        console.log("History message has start greater than last operation.");
         this.ws?.close();
         return;
       }
@@ -176,12 +149,9 @@ export class Collab {
           this.applyServer(operation);
         }
       }
-    } else if (msg.Language !== undefined) {
-      this.options.onChangeLanguage?.(msg.Language);
     } else if (msg.UserInfo !== undefined) {
       const { id, info } = msg.UserInfo;
       if (id !== this.me) {
-        console.log(`${id} is not me: ${this.me}`)
         this.users = { ...this.users };
         if (info) {
           this.users[id] = info;
@@ -202,21 +172,21 @@ export class Collab {
   }
 
   private serverAck() {
-    if (!this.outstanding) {
+    if (!this.outstandingOp) {
       console.warn("Received serverAck with no outstanding operation.");
       return;
     }
-    this.outstanding = this.buffer;
+    this.outstandingOp = this.buffer;
     this.buffer = undefined;
-    if (this.outstanding) {
-      this.sendOperation(this.outstanding);
+    if (this.outstandingOp) {
+      this.sendOperation(this.outstandingOp);
     }
   }
 
   private applyServer(operation: OpSeq) {
-    if (this.outstanding) {
-      const pair = this.outstanding.transform(operation)!;
-      this.outstanding = pair.first();
+    if (this.outstandingOp) {
+      const pair = this.outstandingOp.transform(operation)!;
+      this.outstandingOp = pair.first();
       operation = pair.second();
       if (this.buffer) {
         const pair = this.buffer.transform(operation)!;
@@ -228,9 +198,9 @@ export class Collab {
   }
 
   public applyClient(operation: OpSeq) {
-    if (!this.outstanding) {
+    if (!this.outstandingOp) {
       this.sendOperation(operation);
-      this.outstanding = operation;
+      this.outstandingOp = operation;
     } else if (!this.buffer) {
       this.buffer = operation;
     } else {
@@ -265,7 +235,6 @@ export class Collab {
 
     for (const op of ops) {
       if (typeof op === "string") {
-        // Insert
         const pos = unicodePosition(this.model, index);
         index += unicodeLength(op);
         this.model.pushEditOperations(
@@ -285,10 +254,8 @@ export class Collab {
           () => null,
         );
       } else if (op >= 0) {
-        // Retain
         index += op;
       } else {
-        // Delete
         const chars = -op;
         var from = unicodePosition(this.model, index);
         var to = unicodePosition(this.model, index + chars);
@@ -381,7 +348,7 @@ export class Collab {
     );
   }
 
-  private onChange(event: editor.IModelContentChangedEvent) {
+  public onChange(event: editor.IModelContentChangedEvent) {
     if (!this.ignoreChanges) {
       const content = this.lastValue;
       const contentLength = unicodeLength(content);
@@ -391,9 +358,7 @@ export class Collab {
       operation.retain(contentLength);
       event.changes.sort((a, b) => b.rangeOffset - a.rangeOffset);
       for (const change of event.changes) {
-        // The following dance is necessary to convert from UTF-16 indices (evil
-        // encoding-dependent JavaScript representation) to portable Unicode
-        // codepoint indices.
+        console.log('change', change, 'content', content)
         const { text, rangeOffset, rangeLength } = change;
         const initialLength = unicodeLength(content.slice(0, rangeOffset));
         const deletedLength = unicodeLength(
@@ -438,13 +403,12 @@ type CursorData = {
   selections: [number, number][];
 };
 
-type ServerMsg = {
+type ServerMessage = {
   Identity?: number;
   History?: {
     start: number;
     operations: UserOperation[];
   };
-  Language?: string;
   UserInfo?: {
     id: number;
     info: UserInfo | null;
@@ -455,27 +419,22 @@ type ServerMsg = {
   };
 };
 
-/** Returns the number of Unicode codepoints in a string. */
 function unicodeLength(str: string): number {
   let length = 0;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   for (const c of str) ++length;
   return length;
 }
 
-/** Returns the number of Unicode codepoints before a position in the model. */
 function unicodeOffset(model: editor.ITextModel, pos: IPosition): number {
   const value = model.getValue();
   const offsetUTF16 = model.getOffsetAt(pos);
   return unicodeLength(value.slice(0, offsetUTF16));
 }
 
-/** Returns the position after a certain number of Unicode codepoints. */
 function unicodePosition(model: editor.ITextModel, offset: number): IPosition {
   const value = model.getValue();
   let offsetUTF16 = 0;
   for (const c of value) {
-    // Iterate over Unicode codepoints
     if (offset <= 0) break;
     offsetUTF16 += c.length;
     offset -= 1;
@@ -483,10 +442,8 @@ function unicodePosition(model: editor.ITextModel, offset: number): IPosition {
   return model.getPositionAt(offsetUTF16);
 }
 
-/** Cache for private use by `generateCssStyles()`. */
 const generatedStyles = new Set<number>();
 
-/** Add CSS styles for a remote user's cursor and selection. */
 function generateCssStyles(hue: number) {
   if (!generatedStyles.has(hue)) {
     generatedStyles.add(hue);

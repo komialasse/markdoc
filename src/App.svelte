@@ -22,9 +22,6 @@
     users = newUsers;
   }
 
-  $inspect(connected);
-  $inspect(users)
-
   $effect(() => {
     if (editor?.getModel()) {
       const model = editor.getModel()!;
@@ -37,6 +34,7 @@
         onConnected: () => (connected = true),
         onDisconnected: () => (connected = false),
       });
+      model.setValue(markdownSample)
     }
 
     return () => {
