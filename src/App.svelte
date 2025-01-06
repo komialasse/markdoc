@@ -7,7 +7,6 @@
   import markdownSample  from "../markdown.txt?raw"
   import { editor as e } from "monaco-editor/esm/vs/editor/editor.api";
   import { Collab, type UserInfo } from "$lib/collab";
-    import { onMount } from "svelte";
   let users: Record<number, UserInfo> = $state.raw({});
   let name = $state(getName());
   let hue = $state(getHue());

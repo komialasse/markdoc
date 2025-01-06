@@ -1,5 +1,3 @@
-//! Eventually consistent server-side logic for Collab.
-
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
@@ -12,28 +10,20 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::{broadcast, Notify};
 use warp::ws::{Message, WebSocket};
 
-use crate::{database::PersistedDocument, ot::transform_index};
+use crate::ot::transform_index;
 
-/// The main object representing a collaborative session.
 pub struct Collab {
-    /// State modified by critical sections of the code.
-    state: RwLock<State>,
-    /// Incremented to obtain unique user IDs.
+    state: RwLock<DocState>,
     count: AtomicU64,
-    /// Used to notify clients of new text operations.
     notify: Notify,
-    /// Used to inform all clients of metadata updates.
-    update: broadcast::Sender<ServerMsg>,
-    /// Set to true when the document is destroyed.
+    update: broadcast::Sender<ServerMessage>,
     killed: AtomicBool,
 }
 
-/// Shared state involving multiple users, protected by a lock.
 #[derive(Default)]
-struct State {
+struct DocState {
     operations: Vec<UserOperation>,
     text: String,
-    language: Option<String>,
     users: HashMap<u64, UserInfo>,
     cursors: HashMap<u64, CursorData>,
 }
@@ -56,42 +46,29 @@ struct CursorData {
     selections: Vec<(u32, u32)>,
 }
 
-/// A message received from the client over WebSocket.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-enum ClientMsg {
-    /// Represents a sequence of local edits from the user.
+enum ClientMessage {
     Edit {
         revision: usize,
         operation: OperationSeq,
     },
-    /// Sets the language of the editor.
-    SetLanguage(String),
-    /// Sets the user's current information.
     ClientInfo(UserInfo),
-    /// Sets the user's cursor and selection positions.
     CursorData(CursorData),
 }
 
-/// A message sent to the client over WebSocket.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-enum ServerMsg {
-    /// Informs the client of their unique socket ID.
+enum ServerMessage {
     Identity(u64),
-    /// Broadcasts text operations to all clients.
     History {
         start: usize,
         operations: Vec<UserOperation>,
     },
-    /// Broadcasts the current language, last writer wins.
-    Language(String),
-    /// Broadcasts a user's information, or `None` on disconnect.
     UserInfo { id: u64, info: Option<UserInfo> },
-    /// Broadcasts a user's cursor position.
     UserCursor { id: u64, data: CursorData },
 }
 
-impl From<ServerMsg> for Message {
-    fn from(msg: ServerMsg) -> Self {
+impl From<ServerMessage> for Message {
+    fn from(msg: ServerMessage) -> Self {
         let serialized = serde_json::to_string(&msg).expect("failed serialize");
         Message::text(serialized)
     }
@@ -110,30 +87,11 @@ impl Default for Collab {
     }
 }
 
-impl From<PersistedDocument> for Collab {
-    fn from(document: PersistedDocument) -> Self {
-        let mut operation = OperationSeq::default();
-        operation.insert(&document.text);
-
-        let Collab = Self::default();
-        {
-            let mut state = Collab.state.write();
-            state.text = document.text;
-            state.language = document.language;
-            state.operations.push(UserOperation {
-                id: u64::MAX,
-                operation,
-            })
-        }
-        Collab
-    }
-}
-
 impl Collab {
-    /// Handle a connection from a WebSocket.
+    // Client connection handle.
     pub async fn on_connection(&self, socket: WebSocket) {
         let id = self.count.fetch_add(1, Ordering::Relaxed);
-        info!("connection! id = {}", id);
+        info!("connection id = {}", id);
         if let Err(e) = self.handle_connection(id, socket).await {
             warn!("connection terminated early: {}", e);
         }
@@ -141,38 +99,20 @@ impl Collab {
         self.state.write().users.remove(&id);
         self.state.write().cursors.remove(&id);
         self.update
-            .send(ServerMsg::UserInfo { id, info: None })
+            .send(ServerMessage::UserInfo { id, info: None })
             .ok();
     }
 
-    /// Returns a snapshot of the latest text.
-    pub fn text(&self) -> String {
-        let state = self.state.read();
-        state.text.clone()
-    }
-
-    /// Returns a snapshot of the current document for persistence.
-    pub fn snapshot(&self) -> PersistedDocument {
-        let state = self.state.read();
-        PersistedDocument {
-            text: state.text.clone(),
-            language: state.language.clone(),
-        }
-    }
-
-    /// Returns the current revision.
     pub fn revision(&self) -> usize {
         let state = self.state.read();
         state.operations.len()
     }
 
-    /// Kill this object immediately, dropping all current connections.
     pub fn kill(&self) {
         self.killed.store(true, Ordering::Relaxed);
         self.notify.notify_waiters();
     }
 
-    /// Returns if this Collab object has been killed.
     pub fn killed(&self) -> bool {
         self.killed.load(Ordering::Relaxed)
     }
@@ -183,9 +123,6 @@ impl Collab {
         let mut revision: usize = self.send_initial(id, &mut socket).await?;
 
         loop {
-            // In order to avoid the "lost wakeup" problem, we first request a
-            // notification, **then** check the current state for new revisions.
-            // This is the same approach that `tokio::sync::watch` takes.
             let notified = self.notify.notified();
             if self.killed() {
                 break;
@@ -214,27 +151,24 @@ impl Collab {
     }
 
     async fn send_initial(&self, id: u64, socket: &mut WebSocket) -> Result<usize> {
-        socket.send(ServerMsg::Identity(id).into()).await?;
+        socket.send(ServerMessage::Identity(id).into()).await?;
         let mut messages = Vec::new();
         let revision = {
             let state = self.state.read();
             if !state.operations.is_empty() {
-                messages.push(ServerMsg::History {
+                messages.push(ServerMessage::History {
                     start: 0,
                     operations: state.operations.clone(),
                 });
             }
-            if let Some(language) = &state.language {
-                messages.push(ServerMsg::Language(language.clone()));
-            }
             for (&id, info) in &state.users {
-                messages.push(ServerMsg::UserInfo {
+                messages.push(ServerMessage::UserInfo {
                     id,
                     info: Some(info.clone()),
                 });
             }
             for (&id, data) in &state.cursors {
-                messages.push(ServerMsg::UserCursor {
+                messages.push(ServerMessage::UserCursor {
                     id,
                     data: data.clone(),
                 });
@@ -259,19 +193,19 @@ impl Collab {
         };
         let num_ops = operations.len();
         if num_ops > 0 {
-            let msg = ServerMsg::History { start, operations };
+            let msg = ServerMessage::History { start, operations };
             socket.send(msg.into()).await?;
         }
         Ok(start + num_ops)
     }
 
     async fn handle_message(&self, id: u64, message: Message) -> Result<()> {
-        let msg: ClientMsg = match message.to_str() {
+        let msg: ClientMessage = match message.to_str() {
             Ok(text) => serde_json::from_str(text).context("failed to deserialize message")?,
-            Err(()) => return Ok(()), // Ignore non-text messages
+            Err(()) => return Ok(()), 
         };
         match msg {
-            ClientMsg::Edit {
+            ClientMessage::Edit {
                 revision,
                 operation,
             } => {
@@ -279,21 +213,17 @@ impl Collab {
                     .context("invalid edit operation")?;
                 self.notify.notify_waiters();
             }
-            ClientMsg::SetLanguage(language) => {
-                self.state.write().language = Some(language.clone());
-                self.update.send(ServerMsg::Language(language)).ok();
-            }
-            ClientMsg::ClientInfo(info) => {
+            ClientMessage::ClientInfo(info) => {
                 self.state.write().users.insert(id, info.clone());
-                let msg = ServerMsg::UserInfo {
+                let msg = ServerMessage::UserInfo {
                     id,
                     info: Some(info),
                 };
                 self.update.send(msg).ok();
             }
-            ClientMsg::CursorData(data) => {
+            ClientMessage::CursorData(data) => {
                 self.state.write().cursors.insert(id, data.clone());
-                let msg = ServerMsg::UserCursor { id, data };
+                let msg = ServerMessage::UserCursor { id, data };
                 self.update.send(msg).ok();
             }
         }

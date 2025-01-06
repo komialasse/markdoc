@@ -227,7 +227,7 @@ export class Collab {
     this.applyOperation(operation);
   }
 
-  private applyClient(operation: OpSeq) {
+  public applyClient(operation: OpSeq) {
     if (!this.outstanding) {
       this.sendOperation(operation);
       this.outstanding = operation;
