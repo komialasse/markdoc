@@ -1,0 +1,6 @@
+[workspace]
+resolver = "2"
+members = ["server", "wasm"]
+
+[profile.release]
+lto = true
