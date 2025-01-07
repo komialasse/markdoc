@@ -36,8 +36,6 @@
         {#each Object.entries(users) as [id, user]}
             <User name={user.name} hue={user.hue} />
         {/each}
-        <!-- <img src={gdocs} alt=""> -->
-        <!-- <p>users and sharelink -  this menu should be a div like google maps</p> -->
     </div>
     <div class="middle">
         <p class="share">Share link</p>
@@ -61,19 +59,19 @@
         </Action>
         <Action name="About">
             <p>
-                An open-source collaborative markdown using the <a
+                An open-source collaborative markdown editor using the <a
                     href="https://en.wikipedia.org/wiki/Operational_transformation" target="_blank"
                     ><strong>operational transform</strong></a
                 >
                 protcol. Share a link to this document with others, and they can
                 edit from their browser while seeing your changes in real time. See
                 the
-                <a href="https://github.com/komialasse" target="_blank"
+                <a href="https://github.com/komialasse/markdoc" target="_blank"
                     >GitHub repository</a
                 > for details.
             </p>
         </Action>
-        <a class="github-link" href="https://github.com/komialasse" target="_blank">
+        <a class="github-link" href="https://github.com/komialasse/markdoc" target="_blank">
             Github
         </a>
     </div>
