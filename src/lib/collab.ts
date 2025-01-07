@@ -364,7 +364,6 @@ export class Collab {
       operation.retain(contentLength);
       event.changes.sort((a, b) => b.rangeOffset - a.rangeOffset);
       for (const change of event.changes) {
-        console.log('change', change, 'content', content)
         const { text, rangeOffset, rangeLength } = change;
         const initialLength = unicodeLength(content.slice(0, rangeOffset));
         const deletedLength = unicodeLength(
