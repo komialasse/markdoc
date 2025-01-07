@@ -1,4 +1,4 @@
-    import animals from "../../animals.json"
+    import animals from "../../../animals.json"
 
     export function getName() {
         return animals[Math.floor(Math.random() * animals.length)]
