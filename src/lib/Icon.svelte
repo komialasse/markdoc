@@ -1,5 +1,5 @@
 <script lang="ts">
-    import {icons} from '$lib/icons'
+    import {icons} from '$lib/util/icons'
     interface Props {
         name: keyof typeof icons
         width?: string

@@ -1,8 +1,8 @@
 <script lang="ts">
   import Bar from "$lib/Bar.svelte";
   import Editor from "./lib/Editor.svelte";
-  import { getHash } from "$lib/hash";
-  import { getHue, getName } from "$lib/user";
+  import { getHash } from "$lib/util/hash";
+  import { getHue, getName } from "$lib/util/user";
   import Icon from "$lib/Icon.svelte";
   import { editor as e } from "monaco-editor/esm/vs/editor/editor.api";
   import { Collab, type UserInfo } from "$lib/collab";
