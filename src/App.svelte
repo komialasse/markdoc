@@ -53,7 +53,7 @@
   }
 </script>
 
-<h1 class="header">Markdoc</h1>
+<h1 class="header">markitdown</h1>
 <main class="main">
   <Bar {users} {link} {currentUser} bind:mode />
   <Editor {mode} bind:editor />

@@ -66,12 +66,12 @@
                 protcol. Share a link to this document with others, and they can
                 edit from their browser while seeing your changes in real time. See
                 the
-                <a href="https://github.com/komialasse/markdoc" target="_blank"
+                <a href="https://github.com/komialasse/markitdown" target="_blank"
                     >GitHub repository</a
                 > for details.
             </p>
         </Action>
-        <a class="github-link" href="https://github.com/komialasse/markdoc" target="_blank">
+        <a class="github-link" href="https://github.com/komialasse/markitdown" target="_blank">
             Github
         </a>
     </div>

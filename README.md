@@ -1,4 +1,4 @@
-# Markdoc
+# markitdown
 
 A _real-time_ collaborative markdown editor based on operational transform. Share a link and collaborate with others on a document in seconds.
 
@@ -36,10 +36,10 @@ This command opens a browser window to `http://localhost:5173`, where code chang
 
 ## Deployment
 
-Markdoc is self hosted and the entire application fits into a single Docker image. You can manually build it with `docker build -t markdoc`. Then type this command to start the container locally.
+markitdown is self hosted and the entire application fits into a single Docker image. You can manually build it with `docker build -t markitdown`. Then type this command to start the container locally.
 
 ```
-docker run -dp 5050:5050 markdoc
+docker run -dp 5050:5050 markitdown
 ```
 
 A public version of this image is deployed to [Render.com](https://render.com/) that users can interact with.
