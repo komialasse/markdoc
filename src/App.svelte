@@ -2,15 +2,15 @@
   import Bar from "$lib/Bar.svelte";
   import Editor from "./lib/Editor.svelte";
   import { getHash } from "$lib/util/hash";
-  import { getHue, getName } from "$lib/util/user";
+  import { getcolor, getName } from "$lib/util/user";
   import Icon from "$lib/Icon.svelte";
   import { editor as e } from "monaco-editor/esm/vs/editor/editor.api";
   import { Collab, type UserInfo } from "$lib/collab";
   import { PUBLIC_USE_SERVER } from "$env/static/public";
   let users: Record<number, UserInfo> = $state.raw({});
   let name = $state(getName());
-  let hue = $state(getHue());
-  let currentUser = { name, hue };
+  let color = $state(getcolor());
+  let currentUser = { name, color };
   let mode: string = $state("split");
   let connected = $state(false);
   let hash = getHash();
@@ -44,7 +44,7 @@
 
   $effect(() => {
     if (connected) {
-      collab.setInfo({ name, hue });
+      collab.setInfo({ name, color });
     }
   });
 

@@ -3,7 +3,7 @@
     import type { UserInfo } from "./collab";
     import User from "./User.svelte";
     interface Props {
-        users: Record<number, { name: string; hue: number }>;
+        users: Record<number, { name: string; color: number }>;
         link: string;
         mode: string;
         currentUser: UserInfo
@@ -32,9 +32,9 @@
 
 <div class="bar">
     <div class="left">
-            <User name={currentUser.name} hue={currentUser.hue} isMe={true}/>
+            <User name={currentUser.name} color={currentUser.color} isMe={true}/>
         {#each Object.entries(users) as [id, user]}
-            <User name={user.name} hue={user.hue} />
+            <User name={user.name} color={user.color} />
         {/each}
     </div>
     <div class="middle">

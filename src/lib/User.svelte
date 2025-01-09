@@ -3,10 +3,10 @@
     import { Label } from "./components/ui/label";
     import { Input } from "./components/ui/input";
     import Icon from "./Icon.svelte";
-    let { name, hue, isMe = false } = $props()
+    let { name, color, isMe = false } = $props()
     let input = $state("Anonymous " + name)
     let width = "1.25rem"
-    let fill = `hsl(${hue}, 90%, 75%)`;
+    let fill = `hsl(${color}, 90%, 75%)`;
 
 </script>
 

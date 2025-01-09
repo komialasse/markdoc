@@ -18,7 +18,7 @@ export type Options = {
 
 export type UserInfo = {
   readonly name: string;
-  readonly hue: number;
+  readonly color: number;
 };
 
 export class Collab {
@@ -306,14 +306,14 @@ export class Collab {
 
     for (const [id, data] of Object.entries(this.userCursors)) {
       if (id in this.users) {
-        const { hue, name } = this.users[id as any];
-        generateCssStyles(hue);
+        const { color, name } = this.users[id as any];
+        generateCssStyles(color);
 
         for (const cursor of data.cursors) {
           const position = unicodePosition(this.model, cursor);
           decorations.push({
             options: {
-              className: `remote-cursor-${hue}`,
+              className: `remote-cursor-${color}`,
               stickiness: 1,
               zIndex: 2,
             },
@@ -330,7 +330,7 @@ export class Collab {
           const positionEnd = unicodePosition(this.model, selection[1]);
           decorations.push({
             options: {
-              className: `remote-selection-${hue}`,
+              className: `remote-selection-${color}`,
               hoverMessage: {
                 value: name,
               },
@@ -449,15 +449,15 @@ function unicodePosition(model: editor.ITextModel, offset: number): IPosition {
 
 const generatedStyles = new Set<number>();
 
-function generateCssStyles(hue: number) {
-  if (!generatedStyles.has(hue)) {
-    generatedStyles.add(hue);
+function generateCssStyles(color: number) {
+  if (!generatedStyles.has(color)) {
+    generatedStyles.add(color);
     const css = `
-      .monaco-editor .remote-selection-${hue} {
-        background-color: hsla(${hue}, 90%, 80%, 0.5);
+      .monaco-editor .remote-selection-${color} {
+        background-color: hsla(${color}, 90%, 80%, 0.5);
       }
-      .monaco-editor .remote-cursor-${hue} {
-        border-left: 2px solid hsl(${hue}, 90%, 25%);
+      .monaco-editor .remote-cursor-${color} {
+        border-left: 2px solid hsl(${color}, 90%, 25%);
       }
     `;
     const element = document.createElement("style");

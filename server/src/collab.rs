@@ -37,7 +37,7 @@ struct UserOperation {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct UserInfo {
     name: String,
-    hue: u32,
+    color: u32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
