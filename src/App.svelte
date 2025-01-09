@@ -6,6 +6,7 @@
   import Icon from "$lib/Icon.svelte";
   import { editor as e } from "monaco-editor/esm/vs/editor/editor.api";
   import { Collab, type UserInfo } from "$lib/collab";
+  import { PUBLIC_USE_SERVER } from "$env/static/public";
   let users: Record<number, UserInfo> = $state.raw({});
   let name = $state(getName());
   let hue = $state(getHue());
@@ -21,8 +22,9 @@
     users = newUsers;
   }
 
+
   $effect(() => {
-    if (editor?.getModel()) {
+    if (PUBLIC_USE_SERVER  === 'true' && editor?.getModel()) {
       const model = editor.getModel()!;
       model.setValue("");
       model.setEOL(0); // LF
