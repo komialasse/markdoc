@@ -122,13 +122,10 @@
     .bar {
         font-size: 13px;
         display: flex;
+        align-items: center;
         padding: 4px 12px;
         border-bottom: 1px solid #e1e4e8;
         background-color: #fafbfc;
-        user-select: none;
-        overflow: hidden;
-        justify-content: end;
-        max-height: 40px;
     }
     a {
         /* need this for anchor fixed header  https://stackoverflow.com/questions/10732690 */

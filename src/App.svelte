@@ -81,9 +81,10 @@
     display: flex;
     flex-direction: column;
     height: calc(100vh - 30px);
-    overflow: visible;
+    overflow: auto;
     border: 1px solid #e1e4e8;
     margin: 0 1em;
+    border-radius: 10px;
   }
   .header {
     font-family: monospace;
