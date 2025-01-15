@@ -59,6 +59,7 @@
             },
             overviewRulerBorder: false,
             hideCursorInOverviewRuler: true,
+            scrollBeyondLastLine: false,
         });
 
         const model = editor.getModel()!;
