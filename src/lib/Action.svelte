@@ -5,7 +5,7 @@
     interface Props {
         name: string
         open?: boolean
-        onclick: MouseEventHandler<HTMLButtonElement> | null | undefined
+        onclick?: MouseEventHandler<HTMLButtonElement> | null | undefined
         children?: Function
     }
     let {name, open = false, onclick, children = () => {}}: Props = $props();

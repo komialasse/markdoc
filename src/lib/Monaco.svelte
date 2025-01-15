@@ -53,6 +53,12 @@
             minimap: {
                 enabled: false
             },
+            scrollbar: {
+                horizontal: "hidden",
+                vertical: "hidden"
+            },
+            overviewRulerBorder: false,
+            hideCursorInOverviewRuler: true,
         });
 
         const model = editor.getModel()!;
