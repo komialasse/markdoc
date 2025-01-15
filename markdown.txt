@@ -1,4 +1,4 @@
-# Welcome to My Markdown Guide 🌟
+# Markdown sample 🌟
 
 Markdown is a simple and flexible way to create rich text documents. Here's a quick tour of some features!
 
