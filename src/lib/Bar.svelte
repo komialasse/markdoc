@@ -89,7 +89,6 @@
     .copy-button {
         border: solid #e2e8f0;
         background-color: #e2e8f0;
-        position: relative;
     }
     .copy {
         display: flex;

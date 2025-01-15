@@ -87,7 +87,7 @@
     border-radius: 10px;
   }
   .header {
-    font-family: monospace;
+    letter-spacing: .03rem;
     font-weight: bold;
     font-size: 18px;
     margin: 0 auto;
