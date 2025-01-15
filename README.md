@@ -6,7 +6,6 @@ The frontend is written in Svelte and TypeScript, while the server is written in
 
 The server itself stores state within in-memory data structures and broadcasts messages to clients. This allows the server to quickly serve many clients at once, with the tradeoff being documents are lost on restart. Operational transform is good because of the simplicity of it's implementation, though there are more robust [CRDT algorithms](https://arxiv.org/abs/2409.14252) present.
 
-[_Try it out!_](https://markitdwn.onrender.com/)
 
 ## Development
 
@@ -45,3 +44,5 @@ docker run -dp 5050:5050 markitdown
 ```
 
 A public version of this image is deployed to [Render.com](https://render.com/) that users can interact with.
+
+[_Try it out!_](https://markitdwn.onrender.com/)
