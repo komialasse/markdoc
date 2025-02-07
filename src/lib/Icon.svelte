@@ -6,10 +6,12 @@
         class?: string
         fill?: string
     }
-    let { name, 
+    let { 
+        name, 
         fill = 'currentColor', 
         width = '1rem',
-    class: className = '' }: Props = $props()
+        class: className = '' 
+    }: Props = $props()
     // controls svg width and height
     let height = '1.6rem';
     let focusable: string | number | null | undefined = undefined;
