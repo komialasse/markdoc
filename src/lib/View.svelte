@@ -48,7 +48,7 @@
 
 </style>
 
-<div id="view" class="view">
+<div id="foobarbaz" class="view">
     {#await render(content) then renderedContent}
      {@html renderedContent}
     {/await}

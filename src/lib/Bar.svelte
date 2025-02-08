@@ -14,14 +14,17 @@
     function onclick(e: MouseEvent) {
         const element = e.target as HTMLButtonElement;
         if (element) {
-            const elementMode = element
-                .getAttribute("name")
-                ?.toLocaleLowerCase();
-            if (mode === elementMode) {
-                mode = "split";
-            } else if (elementMode !== undefined) {
-                mode = elementMode;
+            const elementMode = element.getAttribute("name")?.toLowerCase();
+        
+        if (elementMode) {
+            if (mode === "split") {
+                mode = elementMode; // Toggle back to single mode
+            } else if (mode === elementMode) {
+                mode = "split"; // Switch to split if already active
+            } else {
+                mode = elementMode; // Switch to new mode
             }
+        }
         }
     }
 

@@ -15,6 +15,7 @@
 
     let { editor = $bindable(), content = $bindable() }: Props = $props();
 
+
     onMount(async () => {
         self.MonacoEnvironment = {
             getWorker: function (_: string, label: string) {
@@ -77,8 +78,9 @@
 
 <style>
     #editor {
-        flex: 1 1 0%;
+        flex: 1 0 0%;
         min-height: 0px;
+        min-width: 0;
     }
 
 </style>

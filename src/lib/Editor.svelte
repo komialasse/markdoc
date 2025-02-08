@@ -8,18 +8,12 @@
 
 
 <div class="editor">
-    {#if mode === 'split'}
-    <div class="editor cflex">
-        <Monaco bind:editor bind:content />
-    </div>
-        <View {content} />
+    {#if mode === 'split' || mode === 'editor'}
+        <div class="editor cflex">
+            <Monaco bind:editor bind:content />
+        </div>
     {/if}
-    {#if mode === 'editor'}
-    <div class="editor cflex">
-        <Monaco bind:editor bind:content />
-    </div>
-    {/if}
-    {#if mode === 'view'}
+    {#if mode === 'split' || mode === 'view'}
         <View {content} />
     {/if}
 </div>
@@ -27,11 +21,11 @@
 <style>
     .editor {
         display: flex;
-        min-height: 0px;
+        min-width: 0;
         flex: 1 0 0%;
     }
 
     .cflex {
-        flex-direction: column;
+        flex-direction: row;
     }
 </style>
